@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  datasource :
+    url: jdbc:postgresql://localhost:5432/ai_agent_db
+    username: aiagent
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+        hibernate:
+          format_sql: true
+
+
+ai:
+  base-url: https://api.deepseek.com
+  api-key: ${DEEPSEEK_API_KEY}
+  model: deepseek-v4-flash
+  system-prompt: 你是一个 Java 和 AI Agent 学习助手，请用简单清楚的方式回答问题。

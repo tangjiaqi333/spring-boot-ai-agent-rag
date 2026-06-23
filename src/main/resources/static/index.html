@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>Spring Boot + DeepSeek AI Chat</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+        }
+
+        #sidebar {
+            width: 280px;
+            border-right: 1px solid #ddd;
+            padding: 16px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #main {
+            flex: 1;
+            padding: 32px;
+            box-sizing: border-box;
+            max-width: 1000px;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        #chatBox {
+            border: 1px solid #ddd;
+            padding: 16px;
+            min-height: 480px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        input {
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px 16px;
+            margin-left: 6px;
+            cursor: pointer;
+        }
+
+        #messageInput {
+            width: 70%;
+        }
+
+        #conversationIdInput {
+            width: 70%;
+        }
+
+        .user {
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        .ai {
+            margin-top: 8px;
+            color: #333;
+        }
+
+        .conversation-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .conversation-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        .conversation-time {
+            color: #777;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        #newChatBtn {
+            width: 100%;
+            margin: 0 0 16px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <h3>历史会话</h3>
+    <button id="newChatBtn" onclick="newChat()">新建会话</button>
+    <div id="conversationList"></div>
+</div>
+
+<div id="main">
+    <h2>Spring Boot + DeepSeek AI Chat</h2>
+
+    <div id="chatBox"></div>
+
+    <div>
+        <input id="conversationIdInput" placeholder="当前 conversationId">
+        <button onclick="loadHistory()">加载历史</button>
+    </div>
+
+    <div>
+        <input id="messageInput" placeholder="请输入你的问题">
+        <button onclick="sendMessage()">发送</button>
+    </div>
+</div>
+
+<script>
+    let conversationId = null;
+
+    window.onload = function () {
+        loadConversations();
+    };
+
+    function appendUserMessage(content) {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML += `<div class="user">你：${content}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendAiMessage(content) {
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML += `<div class="ai">AI：${content}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function newChat() {
+        conversationId = null;
+        document.getElementById("conversationIdInput").value = "";
+        document.getElementById("chatBox").innerHTML = "";
+    }
+
+    function loadConversations() {
+        fetch("/api/chat/conversations")
+            .then(response => response.json())
+            .then(result => {
+                console.log("会话列表：", result);
+
+                if (result.code !== 200) {
+                    alert(result.message || "加载会话列表失败");
+                    return;
+                }
+
+                const list = document.getElementById("conversationList");
+                list.innerHTML = "";
+
+                const conversations = result.data || [];
+
+                conversations.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "conversation-item";
+
+                    div.innerHTML = `
+                        <div>${item.conversationId}</div>
+                        <div class="conversation-time">${item.latestMessageTime || ""}</div>
+                    `;
+
+                    div.onclick = function () {
+                        conversationId = item.conversationId;
+                        document.getElementById("conversationIdInput").value = conversationId;
+                        loadHistoryById(conversationId);
+                    };
+
+                    list.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error("加载会话列表失败：", error);
+            });
+    }
+
+    function loadHistory() {
+        const input = document.getElementById("conversationIdInput");
+        const id = input.value.trim();
+
+        if (!id) {
+            alert("请输入 conversationId");
+            return;
+        }
+
+        conversationId = id;
+        loadHistoryById(id);
+    }
+
+    function loadHistoryById(id) {
+        fetch(`/api/chat/${encodeURIComponent(id)}/messages`)
+            .then(response => response.json())
+            .then(result => {
+                console.log("历史记录返回：", result);
+
+                if (result.code !== 200) {
+                    alert(result.message || "加载失败");
+                    return;
+                }
+
+                const chatBox = document.getElementById("chatBox");
+                chatBox.innerHTML = "";
+
+                const messages = result.data || [];
+
+                messages.forEach(msg => {
+                    console.log("单条消息：", msg);
+
+                    if (msg.role === "user") {
+                        appendUserMessage(msg.content);
+                    } else if (msg.role === "assistant") {
+                        appendAiMessage(msg.content);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("加载历史失败：", error);
+                alert("加载历史失败");
+            });
+    }
+
+    function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const message = input.value.trim();
+
+        if (!message) {
+            alert("请输入问题");
+            return;
+        }
+
+        appendUserMessage(message);
+
+        const chatBox = document.getElementById("chatBox");
+        chatBox.innerHTML += `<div class="ai">AI：</div>`;
+
+        const aiDivs = document.getElementsByClassName("ai");
+        const currentAiDiv = aiDivs[aiDivs.length - 1];
+
+        input.value = "";
+
+        let url = `/api/chat/stream?message=${encodeURIComponent(message)}`;
+
+        if (conversationId) {
+            url += `&conversationId=${encodeURIComponent(conversationId)}`;
+        }
+
+        const eventSource = new EventSource(url);
+
+        eventSource.addEventListener("conversationId", function (event) {
+            conversationId = event.data;
+            document.getElementById("conversationIdInput").value = conversationId;
+            console.log("conversationId:", conversationId);
+        });
+
+        eventSource.addEventListener("message", function (event) {
+            currentAiDiv.innerHTML += event.data;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        eventSource.addEventListener("done", function () {
+            eventSource.close();
+            loadConversations();
+        });
+
+        eventSource.addEventListener("error", function (event) {
+            console.error("SSE error:", event);
+            eventSource.close();
+            loadConversations();
+        });
+    }
+</script>
+
+</body>
+</html>
