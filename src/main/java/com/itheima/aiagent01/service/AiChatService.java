@@ -2,6 +2,9 @@ package com.itheima.aiagent01.service;
 
 import com.itheima.aiagent01.client.DeepSeekClient;
 import com.itheima.aiagent01.dto.ChatResponse;
+import com.itheima.aiagent01.dto.RagAnswerResult;
+import com.itheima.aiagent01.dto.RagMessageResult;
+import com.itheima.aiagent01.dto.SourceReferenceResponse;
 import com.itheima.aiagent01.rag.RagService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -53,14 +56,19 @@ public class AiChatService {
             return new ChatResponse(toolReply, finalConversationId);
         }
 
-        String ragReply = ragService.answerIfKnowledgeMatched(message);
+        RagAnswerResult  ragAnswerResult= ragService.answerIfKnowledgeMatched(message);
 
-        if (StringUtils.hasText(ragReply)) {
-            conversationService.saveMessage(finalConversationId, "user", message);
-            conversationService.saveMessage(finalConversationId, "assistant", ragReply);
+        if (ragAnswerResult != null) {
+            System.out.println("RAG 命中，使用知识库回答");
+            conversationService.saveMessage(conversationId, "assistant", ragAnswerResult.getAnswer());
 
-            return new ChatResponse(ragReply, finalConversationId);
+            return new ChatResponse(
+                    ragAnswerResult.getAnswer(),
+                    conversationId,
+                    true,
+                    ragAnswerResult.getSources());
         }
+        System.out.println("RAG 未命中，使用 DeepSeek 模型回答");
 
         List<Map<String, String>> messages = new ArrayList<>();
         messages.add(Map.of("role", "system", "content", systemPrompt));
@@ -107,19 +115,25 @@ public class AiChatService {
                     return;
                 }
 
-                List<Map<String, String>> messages = new ArrayList<>();
-
-                List<Map<String, String>> ragMessages =
+                RagMessageResult ragMessageResult =
                         ragService.buildRagMessagesIfKnowledgeMatched(message);
 
-                if (ragMessages != null) {
-                    messages.addAll(ragMessages);
+                List<Map<String, String>> messages;
+                boolean ragUsed = false;
+                List<SourceReferenceResponse> sources = new ArrayList<>();
+
+                if (ragMessageResult != null) {
+                    System.out.println("Stream RAG 命中，使用知识库回答");
+
+                    ragUsed = true;
+                    messages = ragMessageResult.getMessages();
+                    sources = ragMessageResult.getSources();
                 } else {
-                    messages.add(Map.of("role", "system", "content", systemPrompt));
-                    messages.addAll(history);
+                    System.out.println("Stream RAG 未命中，走普通 DeepSeek 兜底");
+
+                    messages = conversationService.loadHistoryFromDb(finalConversationId);
                     messages.add(Map.of("role", "user", "content", message));
                 }
-
                 deepSeekClient.streamChat(messages, content -> {
                     try {
                         fullReply.append(content);
@@ -134,6 +148,15 @@ public class AiChatService {
 
                 conversationService.saveMessage(finalConversationId, "user", message);
                 conversationService.saveMessage(finalConversationId, "assistant", fullReply.toString());
+
+                emitter.send(SseEmitter.event()
+                        .name("ragUsed")
+                        .data(ragUsed));
+                if (ragUsed) {
+                    emitter.send(SseEmitter.event()
+                            .name("sources")
+                            .data(sources));
+                }
 
                 emitter.send(SseEmitter.event()
                         .name("done")

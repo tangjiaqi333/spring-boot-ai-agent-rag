@@ -5,7 +5,7 @@ spring:
   datasource :
     url: jdbc:postgresql://localhost:5432/ai_agent_db
     username: aiagent
-    password: ${DB_PASSWORD}
+    password: aiagent123
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -22,3 +22,11 @@ ai:
   api-key: ${DEEPSEEK_API_KEY}
   model: deepseek-v4-flash
   system-prompt: 你是一个 Java 和 AI Agent 学习助手，请用简单清楚的方式回答问题。
+
+rag:
+  top-k: 3
+  min-score: 20
+  vector-weight: 1.0
+  keyword-weight: 1.0
+  candidate-k: 10
+  rerank-enabled: true
