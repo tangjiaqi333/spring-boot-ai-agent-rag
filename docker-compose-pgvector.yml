@@ -1,0 +1,15 @@
+services:
+  postgres-pgvector:
+    image: pgvector/pgvector:0.8.3-pg18-trixie
+    container_name: ai-agent-pgvector
+    environment:
+      POSTGRES_DB: ai_agent_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
+
+volumes:
+  pgvector_data:

@@ -3,7 +3,7 @@ package com.itheima.aiagent01.tool;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CalculatorTool {
+public class CalculatorTool implements AgentTool {
 
     public String calculate(String expression) {
         if (expression == null || expression.isBlank()) {
@@ -24,13 +24,24 @@ public class CalculatorTool {
         try {
             if (expression.contains("*")) {
                 String[] parts = expression.split("\\*");
+
+                if (parts.length != 2) {
+                    return "暂时只支持两个数字的乘法";
+                }
+
                 double a = Double.parseDouble(parts[0]);
                 double b = Double.parseDouble(parts[1]);
+
                 return formatResult(a * b);
             }
 
             if (expression.contains("/")) {
                 String[] parts = expression.split("/");
+
+                if (parts.length != 2) {
+                    return "暂时只支持两个数字的除法";
+                }
+
                 double a = Double.parseDouble(parts[0]);
                 double b = Double.parseDouble(parts[1]);
 
@@ -43,15 +54,27 @@ public class CalculatorTool {
 
             if (expression.contains("+")) {
                 String[] parts = expression.split("\\+");
+
+                if (parts.length != 2) {
+                    return "暂时只支持两个数字的加法";
+                }
+
                 double a = Double.parseDouble(parts[0]);
                 double b = Double.parseDouble(parts[1]);
+
                 return formatResult(a + b);
             }
 
             if (expression.contains("-")) {
                 String[] parts = expression.split("-");
+
+                if (parts.length != 2) {
+                    return "暂时只支持两个数字的减法";
+                }
+
                 double a = Double.parseDouble(parts[0]);
                 double b = Double.parseDouble(parts[1]);
+
                 return formatResult(a - b);
             }
 
@@ -68,5 +91,20 @@ public class CalculatorTool {
         }
 
         return String.valueOf(result);
+    }
+
+    @Override
+    public String getName() {
+        return "calculator";
+    }
+
+    @Override
+    public String getDescription() {
+        return "执行数学计算。input 传入数学表达式，例如：12345*678。";
+    }
+
+    @Override
+    public String execute(String input) {
+        return calculate(input);
     }
 }

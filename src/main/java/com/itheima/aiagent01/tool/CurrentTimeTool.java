@@ -6,13 +6,24 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
-public class CurrentTimeTool {
+public class CurrentTimeTool implements AgentTool {
 
     public String getCurrentTime() {
-        LocalDateTime now = LocalDateTime.now();
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    @Override
+    public String getName() {
+        return "current_time";
+    }
 
-        return now.format(formatter);
+    @Override
+    public String getDescription() {
+        return "获取当前系统时间。无需参数。";
+    }
+
+    @Override
+    public String execute(String input) {
+        return getCurrentTime();
     }
 }

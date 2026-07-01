@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public class KnowledgeUpdateRequest {
 
-    @NotBlank(message = "content cannot be empty")
+    @NotBlank(message = "知识内容不能为空")
     private String content;
 
     public KnowledgeUpdateRequest () {

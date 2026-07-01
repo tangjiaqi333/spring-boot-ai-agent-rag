@@ -10,8 +10,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Result<Object> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getFieldError().getDefaultMessage();
+        String message = "参数校验失败";
+
+        if (e.getBindingResult().getFieldError() != null) {
+            message = e.getBindingResult().getFieldError().getDefaultMessage();
+        }
+
         return Result.error(400, message);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public Result<Object> handleBusinessException(BusinessException e) {
+        return Result.error(e.getCode(), e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

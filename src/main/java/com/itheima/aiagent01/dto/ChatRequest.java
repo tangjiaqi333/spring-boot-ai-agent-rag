@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 
 //chatrequest = 用户发送的请求
 public class ChatRequest {
-    @NotBlank(message = "message cannot be empty")
+    @NotBlank(message = "消息不能为空")
     private String message;
 
     private String conversationId;

@@ -1,10 +1,8 @@
 package com.itheima.aiagent01.controller;
 
 import com.itheima.aiagent01.common.Result;
-import com.itheima.aiagent01.dto.ChatMessageResponse;
-import com.itheima.aiagent01.dto.ChatRequest;
-import com.itheima.aiagent01.dto.ChatResponse;
-import com.itheima.aiagent01.dto.ConversationResponse;
+import com.itheima.aiagent01.dto.*;
+import com.itheima.aiagent01.service.AgentLoopService;
 import com.itheima.aiagent01.service.AiChatService;
 import com.itheima.aiagent01.service.ConversationService;
 import jakarta.validation.Valid;
@@ -19,13 +17,16 @@ public class ChatController {
 
     private final AiChatService aiChatService;
     private final ConversationService conversationService;
+    private final AgentLoopService agentLoopService;
 
     public ChatController(
             AiChatService aiChatService,
-            ConversationService conversationService
+            ConversationService conversationService,
+            AgentLoopService agentLoopService
     ) {
         this.aiChatService = aiChatService;
         this.conversationService = conversationService;
+        this.agentLoopService = agentLoopService;
     }
 
     @PostMapping
@@ -76,6 +77,24 @@ public class ChatController {
         List<ConversationResponse> conversations = conversationService.getConversations();
 
         return Result.success(conversations);
+    }
+
+    @PostMapping("/agent-loop")
+    public Result<AgentLoopResponse> agentLoop(@Valid @RequestBody ChatRequest request) {
+        AgentLoopResponse response = agentLoopService.run(
+                request.getConversationId(),
+                request.getMessage()
+        );
+        return Result.success(response);
+    }
+
+    @PostMapping("/agent-loop-v2")
+    public Result<AgentLoopResponse> agentLoopV2(@Valid @RequestBody ChatRequest request) {
+        AgentLoopResponse response = agentLoopService.runV2(
+                request.getConversationId(),
+                request.getMessage()
+        );
+        return Result.success(response);
     }
 }
 

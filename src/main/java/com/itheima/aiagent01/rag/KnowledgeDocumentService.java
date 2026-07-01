@@ -3,6 +3,7 @@ package com.itheima.aiagent01.rag;
 import com.itheima.aiagent01.dto.KnowledgeDocumentResponse;
 import com.itheima.aiagent01.dto.KnowledgeDocumentSummaryResponse;
 import com.itheima.aiagent01.entity.KnowledgeDocument;
+import com.itheima.aiagent01.exception.BusinessException;
 import com.itheima.aiagent01.repository.KnowledgeDocumentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -100,24 +101,24 @@ public class KnowledgeDocumentService {
 
     public void uploadDocument(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new RuntimeException("文件不能为空");
+            throw new BusinessException("文件不能为空");
         }
 
         String fileName = file.getOriginalFilename();
 
         if (fileName == null) {
-            throw new RuntimeException("文件名不能为空");
+            throw new BusinessException("文件名不能为空");
         }
 
         if (!fileName.endsWith(".txt") && !fileName.endsWith(".md")) {
-            throw new RuntimeException("目前只支持 txt 和 md 文件");
+            throw new BusinessException("目前只支持 txt 和 md 文件");
         }
 
         try {
             String content = new String(file.getBytes(), StandardCharsets.UTF_8);
 
             if (!StringUtils.hasText(content)) {
-                throw new RuntimeException("文件内容不能为空");
+                throw new BusinessException("文件内容不能为空");
             }
 
             List<String> chunks = documentChunkService.splitText(content, 500, 100);
