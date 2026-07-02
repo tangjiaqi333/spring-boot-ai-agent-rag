@@ -1,8 +1,10 @@
 package com.itheima.aiagent01.tool;
 
+import com.itheima.aiagent01.dto.McpToolResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,5 +46,18 @@ public class ToolRegistry {
         }
 
         return builder.toString();
+    }
+
+    public List<McpToolResponse> listTools() {
+        List<McpToolResponse> tools = new ArrayList<>();
+
+        for (AgentTool tool : toolMap.values()) {
+            tools.add(new McpToolResponse(
+                    tool.getName(),
+                    tool.getDescription()
+            ));
+        }
+
+        return tools;
     }
 }
